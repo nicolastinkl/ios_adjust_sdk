@@ -17,8 +17,8 @@ Pod::Spec.new do |s|
 
   s.subspec 'Adjust' do |adj|
     adj.source_files        = 'Adjust/**/*.{h,m}', 'UmbrellaHeaders/sdk/*.{h,m}'
-    adj.public_header_files = 'Adjust/*.h', 'UmbrellaHeaders/sdk/*.h'
-    adj.exclude_files       = 'Adjust/include/**/*.h'
+    adj.public_header_files = 'Adjust/*.h', 'UmbrellaHeaders/sdk/*.h','AdjustBridge/*.h', 'UmbrellaHeaders/webbridge/*.h'
+    adj.exclude_files       = ['Adjust/include/**/*.h', 'AdjustBridge/include/**/*.h']#'Adjust/include/**/*.h'
     adj.resource_bundle     = {'Adjust' => ['Adjust/*.xcprivacy']}
     adj.header_dir          = 'AdjustSdk'
     adj.dependency          'AdjustSignature', '~> 3.18'

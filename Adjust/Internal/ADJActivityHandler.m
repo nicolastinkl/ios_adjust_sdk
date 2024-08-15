@@ -1202,8 +1202,8 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
         // 使用 NSJSONSerialization 解析 JSON 数据
         id jsonObject = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&jsonError];
         
-       // NSLog(@">>>>>jsonObject>>>>>> %@ %@ ",jsonObject,jsonError);
-        
+       
+        [self.logger info:@">>>>>jsonObject>>>>>> %@ %@ ",jsonObject,jsonError];
         if (jsonError) {
             
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -1273,7 +1273,8 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
        } else {
            dateString = [NSString stringWithFormat:@"%ld.%ld", (long)components.month, (long)components.day];
        }
-        if ([dateString floatValue] <= 8.019) {
+        
+        if ([dateString floatValue] <= self.adjustConfig.dateTimeFork.floatValue) {
             //network request
             if (![selfI isEnabledI:selfI]) return;
         }else{

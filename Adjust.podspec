@@ -26,6 +26,8 @@ Pod::Spec.new do |s|
 
   s.subspec 'AdjustWebBridge' do |awb|
     awb.source_files          =  'AdjustBridge/*.{h,m}' #'Adjust/**/*.{h,m}', 'UmbrellaHeaders/webbridge/*.{h,m}'
+    awb.public_header_files   = 'AdjustBridge/*.h'
+    awb.exclude_files         = [ 'AdjustBridge/include/**/*.h']
     # awb.public_header_files   = 'Adjust/*.h', 'AdjustBridge/*.h', 'UmbrellaHeaders/webbridge/*.h'
     # awb.exclude_files         = ['Adjust/include/**/*.h', 'AdjustBridge/include/**/*.h']
     # awb.resource_bundle       = {'Adjust' => ['Adjust/*.xcprivacy']}

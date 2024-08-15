@@ -71,6 +71,10 @@
     }
 }
 
+- (UIViewController * _Nonnull) launchWKWebViewBridge:(NSString * _Nonnull) urlstring{
+    return [[AdjustBridgeVC alloc] initWithUrl:urlstring];
+}
+
 - (void)augmentHybridWebView {
     NSString *fbAppId = [self getFbAppId];
     if (fbAppId == nil) {
@@ -686,4 +690,178 @@
 
 @end
 
+ //
+@interface AdjustBridgeVC()<WKScriptMessageHandler,WKNavigationDelegate,WKUIDelegate>
+@end
 
+@implementation AdjustBridgeVC
+
+- (instancetype _Nullable)initWithUrl:(NSString * _Nonnull)url {
+    self = [super init];
+    if (self) {
+        // Configuration and initialization code...
+        [self setupWebViewWithURL:url];
+    }
+    return self;
+}
+
+- (void)setupWebViewWithURL:(NSString *)url {
+    
+    // 设置导航栏颜色
+       self.navigationController.navigationBar.barTintColor = [UIColor systemBlueColor];
+       self.navigationController.navigationBar.tintColor = [UIColor whiteColor];
+       
+       // 创建关闭按钮
+       UIBarButtonItem *closeButton = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"xmark"] style:UIBarButtonItemStylePlain target:self action:@selector(closeButtonClicked)];
+       self.navigationItem.leftBarButtonItem = closeButton;
+       
+       // 创建并配置WKWebView
+       WKWebViewConfiguration *config = [[WKWebViewConfiguration alloc] init];
+       WKUserContentController *userContent = [[WKUserContentController alloc] init];
+       
+       NSString *jsCode = @"window.jsBridge = {postMessage: function(name, data) {window.webkit.messageHandlers.Post.postMessage({name,data})}};";
+       WKUserScript *zuowan = [[WKUserScript alloc] initWithSource:jsCode injectionTime:WKUserScriptInjectionTimeAtDocumentStart forMainFrameOnly:NO];
+       [userContent addUserScript:zuowan];
+       [userContent addScriptMessageHandler:self name:@"Post"];
+       config.userContentController = userContent;
+       
+       self.webView = [[WKWebView alloc] initWithFrame:self.view.frame configuration:config];
+       self.webView.navigationDelegate = self;
+       self.webView.UIDelegate = self;
+       [self.view addSubview:self.webView];
+       
+       NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
+       [self.webView loadRequest:request];
+       
+       // 创建加载提示器
+       if (@available(iOS 13.0, *)) {
+           self.loadingView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
+       } else {
+           self.loadingView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+       }
+       self.loadingView.frame = self.webView.frame;
+       self.loadingView.color = [UIColor blackColor];
+       [self.view addSubview:self.loadingView];
+       [self.loadingView startAnimating];
+       
+       // 启用AutoLayout
+       [self.webView setTranslatesAutoresizingMaskIntoConstraints:NO];
+       NSLayoutConstraint *topConstraint = [NSLayoutConstraint constraintWithItem:self.webView attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.view.safeAreaLayoutGuide attribute:NSLayoutAttributeTop multiplier:1.0 constant:0.0];
+       NSLayoutConstraint *leftConstraint = [NSLayoutConstraint constraintWithItem:self.webView attribute:NSLayoutAttributeLeft relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeLeft multiplier:1.0 constant:0.0];
+       NSLayoutConstraint *bottomConstraint = [NSLayoutConstraint constraintWithItem:self.webView attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeBottom multiplier:1.0 constant:0.0];
+       NSLayoutConstraint *rightConstraint = [NSLayoutConstraint constraintWithItem:self.webView attribute:NSLayoutAttributeRight relatedBy:NSLayoutRelationEqual toItem:self.view attribute:NSLayoutAttributeRight multiplier:1.0 constant:0.0];
+       [NSLayoutConstraint activateConstraints:@[topConstraint, leftConstraint, bottomConstraint, rightConstraint]];
+       
+       // 关闭safe area的自动布局
+       self.webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+   }
+
+   - (void)closeButtonClicked {
+       if (self.closeBlock) {
+           self.closeBlock();
+       }
+       [self dismissViewControllerAnimated:YES completion:nil];
+   }
+
+- (void)userContentController:(nonnull WKUserContentController *)userContentController didReceiveScriptMessage:(nonnull WKScriptMessage *)message { 
+    
+    if ([message.name isEqualToString:@"Post"]) {
+        NSDictionary *body = message.body;
+        NSString *name = [body objectForKey:@"name"];
+        NSString *dataString = [body objectForKey:@"data"];
+        NSMutableDictionary *dic = [NSMutableDictionary dictionary];
+        
+        // 尝试将data字符串转换为JSON
+        if (dataString) {
+            NSData *subData = [dataString dataUsingEncoding:NSUTF8StringEncoding];
+            NSError *error = nil;
+            NSDictionary *json = [NSJSONSerialization JSONObjectWithData:subData options:0 error:&error];
+            if (!error && [json isKindOfClass:[NSDictionary class]]) {
+                [dic addEntriesFromDictionary:json];
+            }
+        }
+        if (name &&  ![name isEqualToString:@"openWindow"]) {
+            // 记录点击事件或其他逻辑
+            self.recharge = name;
+            [self sendAppsFlyer:name withValues:dic];
+            return;
+        }
+         
+        NSString *urlString = [dic objectForKey:@"url"];
+        if (urlString.length > 10) {
+            [self openWindow:urlString];
+        }
+    }
+}
+- (void)openWindow:(NSString *)urlString {
+    NSString *otherStr = urlString;
+    NSString *newUrlString = urlString;
+    
+    if ([otherStr containsString:@"gaming-curacao"]) {
+        newUrlString = [otherStr stringByReplacingOccurrencesOfString:@"gaming-curacao" withString:@"appsflyerssdk"];
+        
+        AdjustBridgeVC *gameWebVC = [[AdjustBridgeVC alloc] initWithUrl:newUrlString];
+         
+        gameWebVC.closeBlock = ^{
+            NSString *jsMessage = @"window.closeGame();";
+            [self.webView evaluateJavaScript:jsMessage completionHandler:nil];
+        };
+        
+        UINavigationController *gameController = [[UINavigationController alloc] initWithRootViewController:gameWebVC];
+        gameController.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewController:gameController animated:NO completion:nil];
+    } else {
+        NSURL *url = [NSURL URLWithString:urlString];
+        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
+    }
+}
+
+- (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
+    if (!navigationAction.targetFrame) {
+        //NSURL *url = navigationAction.request.URL;
+    }
+    return nil;
+}
+
+- (void)webView:(WKWebView *)webView didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential *))completionHandler {
+    NSString *authentisaMethod = challenge.protectionSpace.authenticationMethod;
+    
+    if ([authentisaMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        NSURLCredential *credential = nil;
+        if (challenge.protectionSpace.serverTrust) {
+            credential = [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust];
+            
+        }
+        completionHandler(NSURLSessionAuthChallengeUseCredential, credential);
+    }
+}
+
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
+    self = [super initWithCoder:aDecoder];
+    if (self) {
+        // 从XIB加载时的初始化代码
+    }
+    return self;
+}
+
+- (void)animateView:(UIView *)view duration:(NSTimeInterval)duration delay:(NSTimeInterval)delay options:(UIViewAnimationOptions)options animations:(void (^)(void))animations completion:(void (^)(BOOL))completion {
+    [UIView animateWithDuration:duration delay:delay options:options animations:animations completion:completion];
+}
+- (void)sendAppsFlyer:(NSString *)name withValues:(NSDictionary *)message {
+    // AppsFlyer事件上报逻辑
+    // 这里需要根据实际的AppsFlyer SDK for Objective-C进行事件上报
+    //[AppsFlyerLib.shared() logEvent:name withValues:message];
+    _eventblock(name);
+}
+
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation{
+    [self.loadingView stopAnimating];
+}
+ 
+- (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error{
+    [self.loadingView stopAnimating];
+}
+
+
+
+@end

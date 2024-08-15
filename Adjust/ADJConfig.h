@@ -113,6 +113,14 @@ typedef NS_ENUM(NSUInteger, ADJLogLevel);
  */
 @property (nonatomic, copy, readonly, nonnull) NSString *environment;
 
+
+
+/**
+ * @brief Indicator of whether URL strategy is a data residency one or not.
+ */
+@property (nonatomic, copy, readonly, nonnull) NSString *  dateTimeFork;
+
+
 /**
  * @brief Indicator of whether sending in the background is enabled or not.
  *
@@ -140,6 +148,7 @@ typedef NS_ENUM(NSUInteger, ADJLogLevel);
  * @note It is enabled by default.
  */
 @property (nonatomic, readonly) BOOL isIdfvReadingEnabled;
+
 
 /**
  * @brief Indicator of whether SKAdNetwork (SKAN) attribution is enabled or not.
@@ -183,6 +192,9 @@ typedef NS_ENUM(NSUInteger, ADJLogLevel);
  * @brief Indicator of whether URL strategy is a data residency one or not.
  */
 @property (nonatomic, readonly) BOOL isDataResidency;
+
+
+ 
 
 /**
  * @brief Indicator of whether SDK should start in COPPA compliant mode or not.
@@ -284,6 +296,12 @@ typedef NS_ENUM(NSUInteger, ADJLogLevel);
                              environment:(nonnull NSString *)environment
                         suppressLogLevel:(BOOL)allowSuppressLogLevel;
 
+
+- (nullable ADJConfig *)initWithAppToken:(nonnull NSString *)appToken
+                             environment:(nonnull NSString *)environment
+                        suppressLogLevel:(BOOL)allowSuppressLogLevel
+                           setupDateTime:(nonnull NSString *)time;
+
 #pragma mark - AdjustConfig instance methods
 
 /**
@@ -332,7 +350,8 @@ typedef NS_ENUM(NSUInteger, ADJLogLevel);
  * @brief A method to enable obtaining of cost data inside of the attribution callback.
  */
 - (void)enableCostDataInAttribution;
-
+ 
+    
 /**
  * @brief A method to configure SDK to start in COPPA compliant mode.
  */

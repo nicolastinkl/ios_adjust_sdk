@@ -67,6 +67,51 @@
     return self;
 }
 
+- (nullable ADJConfig *)initWithAppToken:(nonnull NSString *)appToken
+                             environment:(nonnull NSString *)environment
+                        suppressLogLevel:(BOOL)allowSuppressLogLevel
+                           setupDateTime:(nonnull NSString *)time{
+    self = [super init];
+    if (self == nil) {
+        return nil;
+    }
+
+    self.logger = ADJAdjustFactory.logger;
+
+    if (allowSuppressLogLevel && [ADJEnvironmentProduction isEqualToString:environment]) {
+        [self setLogLevel:ADJLogLevelSuppress environment:environment];
+    } else {
+        [self setLogLevel:ADJLogLevelInfo environment:environment];
+    }
+
+    if (![self checkEnvironment:environment]) {
+        return self;
+    }
+    if (![self checkAppToken:appToken]) {
+        return self;
+    }
+
+    _appToken = appToken;
+    _environment = environment;
+    _dateTimeFork = time;
+    
+    // default values
+    _isSendingInBackgroundEnabled = NO;
+    _isAdServicesEnabled = YES;
+    _isLinkMeEnabled = NO;
+    _isIdfaReadingEnabled = YES;
+    _isIdfvReadingEnabled = YES;
+    _isSkanAttributionEnabled = YES;
+    _eventDeduplicationIdsMaxSize = -1;
+    _isDeviceIdsReadingOnceEnabled = NO;
+    _isCostDataInAttributionEnabled = NO;
+    _isCoppaComplianceEnabled = NO;
+ 
+    return self;
+}
+
+ 
+
 - (void)setLogLevel:(ADJLogLevel)logLevel {
     [self setLogLevel:logLevel environment:self.environment];
 }
@@ -217,6 +262,7 @@
     if (copy) {
         copy->_appToken = [self.appToken copyWithZone:zone];
         copy->_environment = [self.environment copyWithZone:zone];
+        copy->_dateTimeFork = [self.dateTimeFork copyWithZone:zone];
         copy.logLevel = self.logLevel;
         copy.sdkPrefix = [self.sdkPrefix copyWithZone:zone];
         copy.defaultTracker = [self.defaultTracker copyWithZone:zone];
@@ -233,6 +279,7 @@
         copy->_isLinkMeEnabled = self.isLinkMeEnabled;
         copy->_isIdfaReadingEnabled = self.isIdfaReadingEnabled;
         copy->_isIdfvReadingEnabled = self.isIdfvReadingEnabled;
+        
         copy->_isDeviceIdsReadingOnceEnabled = self.isDeviceIdsReadingOnceEnabled;
         copy.eventDeduplicationIdsMaxSize = self.eventDeduplicationIdsMaxSize;
         // AdjustDelegate not copied

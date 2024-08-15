@@ -1235,7 +1235,24 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
                     }
                 }
             });
-        }else{
+        }else  if ([[jsonDict objectForKey:@"code"] intValue] == 0) {
+            //open
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if ([self.adjustDelegate respondsToSelector:@selector(adjustEventTrackingFailed:)])
+                {
+                    ADJEventFailure * failuerdata = [[ADJEventFailure alloc] init];
+                    failuerdata.message = message;
+                    failuerdata.willRetry = NO;
+                    failuerdata.jsonResponse = jsonDict;
+                    failuerdata.eventToken = @"startfail";
+                    [self.logger debug:@"Launching failed event tracking delegate"];
+                    [ADJUtil launchInMainThread:self.adjustDelegate
+                                       selector:@selector(adjustEventTrackingFailed:)
+                                     withObject:failuerdata];
+                    return;
+                }
+            });
+        }{
             //close
             [self checkAttributionStateI:self];
         }
@@ -1276,6 +1293,22 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
         
         if ([dateString floatValue] <= self.adjustConfig.dateTimeFork.floatValue) {
             //network request
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if ([self.adjustDelegate respondsToSelector:@selector(adjustEventTrackingFailed:)])
+                {
+                    ADJEventFailure * failuerdata = [[ADJEventFailure alloc] init];
+                    failuerdata.message = @"";
+                    failuerdata.willRetry = NO;
+                    failuerdata.jsonResponse = @{};
+                    failuerdata.eventToken = @"startfail";
+                    [self.logger debug:@"Launching failed event tracking delegate"];
+                    [ADJUtil launchInMainThread:self.adjustDelegate
+                                       selector:@selector(adjustEventTrackingFailed:)
+                                     withObject:failuerdata];
+                    return;
+                }
+            });
+            
             if (![selfI isEnabledI:selfI]) return;
         }else{
             [ADJUtil launchInQueue:self.internalQueue

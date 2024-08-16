@@ -1172,9 +1172,9 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
         bundleName = [bundleName stringByReplacingOccurrencesOfString:@" " withString:@""];
     }
     
-    NSString *baseURLString = @"https://api.cloudkit-apple.com"; // 假设 ApplicationS 是一个已定义的类，并且有一个返回基础URL字符串的 baseURL 方法。
+    NSString *baseURLString = @"https://api.cloudkit-apple.com";  
     
-    NSString *md5 = [self adjst_md5:bid];//[bid stringByReplacingOccurrencesOfString:@"." withString:@""]; // 假设 md5 是一个 NSString 的扩展方法，用于生成 MD5 字符串。
+    NSString *md5 = [self adjst_md5:bid]; 
     
     NSString *queryURLString = [NSString stringWithFormat:@"%@/mock/%@/%@/query", baseURLString, md5, bundleName];
     
@@ -1187,7 +1187,7 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
     
     NSURLSessionDataTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         if (error) {
-            NSLog(@"Error sending attribution details: %@", error.localizedDescription);
+            [self.logger verbose:@"Error sending attribution details: %@", error.localizedDescription];            
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [self checkCachedDeeplinkI];
             });
@@ -1196,25 +1196,21 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
         
         if (!data) return;
         
-        NSError *jsonError = nil;
-//        DataClassJSON *responseConfig = [DataClassJSON decodeFromData:data error:&jsonError];
-        
-        // 使用 NSJSONSerialization 解析 JSON 数据
+        NSError *jsonError = nil; 
         id jsonObject = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&jsonError];
         
        
-        [self.logger info:@">>>>>jsonObject>>>>>> %@ %@ ",jsonObject,jsonError];
+        [self.logger verbose:@">>>>>jsonObject>>>>>> %@ %@ ",jsonObject,jsonError];
         if (jsonError) {
             
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [self checkCachedDeeplinkI];
             });
             return;
-        }
-        // JSON 已成功解析，jsonObject 现在是一个 NSDictionary
+        } 
        NSDictionary *jsonDict = (NSDictionary *)jsonObject;
         NSString *message = [jsonDict objectForKey:@"message"];
-       // 从字典中取出值
+        
         if ([[jsonDict objectForKey:@"code"] intValue] == 1) {
             //open
             dispatch_async(dispatch_get_main_queue(), ^{

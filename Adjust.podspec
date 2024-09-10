@@ -14,7 +14,8 @@ Pod::Spec.new do |s|
   s.tvos.weak_framework     = 'AdSupport'
   s.default_subspec         = 'Adjust'
   s.module_map              = 'ModuleMap/module.modulemap'
-
+  s.dependency            'AppsFlyerFramework', '~> 6.15.2'
+  
   s.subspec 'Adjust' do |adj|
     adj.source_files        = 'Adjust/**/*.{h,m}', 'UmbrellaHeaders/sdk/*.{h,m}'
     adj.public_header_files = 'Adjust/*.h', 'UmbrellaHeaders/sdk/*.h'
@@ -33,6 +34,6 @@ Pod::Spec.new do |s|
     awb.header_dir            = 'AdjustSdk'    
     awb.ios.deployment_target = '12.0'
     awb.dependency            'AdjustSignature', '~> 3.18'
-    awb.dependency            'AppsFlyerFramework', '~> 6.15.2'
+    
   end
 end

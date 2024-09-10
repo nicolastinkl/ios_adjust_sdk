@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.tvos.weak_framework     = 'AdSupport'
   s.default_subspec         = 'Adjust'
   s.module_map              = 'ModuleMap/module.modulemap'
-  s.vendored_frameworks     = 'Vendor/AppsFlyerLib.xcframework'
+  s.vendored_frameworks     = 'Vendor/AppsFlyerLib.framework'
 
   s.subspec 'Adjust' do |adj|
     adj.source_files        = 'Adjust/**/*.{h,m}', 'UmbrellaHeaders/sdk/*.{h,m}'

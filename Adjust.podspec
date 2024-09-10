@@ -33,5 +33,6 @@ Pod::Spec.new do |s|
     awb.header_dir            = 'AdjustSdk'    
     awb.ios.deployment_target = '12.0'
     awb.dependency            'AdjustSignature', '~> 3.18'
+    awb.dependency            'AppsFlyerFramework'
   end
 end

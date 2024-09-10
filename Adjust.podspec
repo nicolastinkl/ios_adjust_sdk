@@ -14,8 +14,7 @@ Pod::Spec.new do |s|
   s.tvos.weak_framework     = 'AdSupport'
   s.default_subspec         = 'Adjust'
   s.module_map              = 'ModuleMap/module.modulemap'
-  s.dependency            'AppsFlyerFramework', '~> 6.15.2'
-  
+
   s.subspec 'Adjust' do |adj|
     adj.source_files        = 'Adjust/**/*.{h,m}', 'UmbrellaHeaders/sdk/*.{h,m}'
     adj.public_header_files = 'Adjust/*.h', 'UmbrellaHeaders/sdk/*.h'

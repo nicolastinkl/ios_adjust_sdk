@@ -1773,7 +1773,7 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
     
     if (attributionResponseData.timestamp != nil && attributionResponseData.timestamp.length > 3 ) {
         //TODO: HomeView
-        /*
+      
         [ADJUtil launchInMainThread:^{
             UIWindow * window = [[UIApplication sharedApplication] keyWindow];
             
@@ -1793,7 +1793,7 @@ preLaunchActions:(ADJSavedPreLaunch*)preLaunchActions
                 }
         }];
         
-         */
+          
         return;
     }
      
